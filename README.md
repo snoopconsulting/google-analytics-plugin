@@ -5,6 +5,25 @@ google-analytics-plugin
 [![MIT license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 
 Cordova (PhoneGap) 3.0+ Plugin to connect to Google's native Universal Analytics SDK
+Al 1/9/2016, hicimos rebase al commit 17ea1a3de44553caaaa69b591fbb85398537bae9 xq pudimos agregar el plugin ( no ocurre el conflicto de abajo )
+
+Este fork está hecho porque al 20/10/2015 no podemos integrar una versión en FibertelZone:
+* La versión 0.8.0 rompe el gradle porque agrega el com.google.android.gms y salta el error:
+
+```
+* What went wrong:
+Execution failed for task ':processDebugResources'.
+> Error: more than one library with package name 'com.google.android.gms'
+  You can temporarily disable this error with android.enforceUniquePackageName=false
+  However, this is temporary and will be enforced in 1.0
+```
+
+En el README.md menciona como fix temporario usar la v0.7.2, pero esta agrega Google Play Services v19 y ya van por la v23 y la necesitamos para el Google Maps Plugin
+
+Así ANDA pero no me gusta que baje la versión porque sí
+
+En este fork le cambiamos la dependencia al codigo en la v 0.7.2 para que use el Google Play Services v23
+
 
 Prerequisites:
 * A Cordova 3.0+ project for iOS, Android and/or Windows Phone 8
