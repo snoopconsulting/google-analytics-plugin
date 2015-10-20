@@ -33,11 +33,15 @@ Fetching plugin "com.google.playservices@19.0.0" via cordova plugins registry
 Tengo que hacer el fork a 
 https://github.com/snoopconsulting/google-analytics-plugin/commit/5957d36fef3242487c38f6348ba391ac85394c7d
 
+```
 git branch v_0.7.2_play_v3 5957d36fef3242487c38f6348ba391ac85394c7d
+```
 
 Edito ahí el plugin.xml y tagueo, ahora se agrega así:
 
+```
 cordova plugin add https://github.com/snoopconsulting/google-analytics-plugin#v_0.7.2_v23
+```
 
 
 Prerequisites:
