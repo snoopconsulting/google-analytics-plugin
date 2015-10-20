@@ -44,8 +44,8 @@
   </platform>
 
   <platform name="android">
-    <dependency id="com.google.playservices@19.0.0" />
-
+    <!-- <dependency id="cordova-plugin-googleplayservices@19.0.0" /> -->
+    <dependency id="com.google.playservices" url="https://github.com/wf9a5m75/google-play-services#v23" /> 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="UniversalAnalytics">
         <param name="android-package" value="com.danielcwilson.plugins.analytics.UniversalAnalyticsPlugin" />
