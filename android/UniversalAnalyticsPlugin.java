@@ -16,6 +16,21 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+// Para importar las librerias GTM
+import com.google.android.gms.tagmanager.Container;
+import com.google.android.gms.tagmanager.TagManager;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.tagmanager.Container.FunctionCallMacroCallback;
+import com.google.android.gms.tagmanager.Container.FunctionCallTagCallback;
+import com.google.android.gms.tagmanager.ContainerHolder;
+import java.util.concurrent.TimeUnit;
+import android.util.Log;
+import com.google.android.gms.tagmanager.DataLayer;
+import android.os.Handler;
+import android.content.Context;
+
+
 public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public static final String START_TRACKER = "startTrackerWithId";
     public static final String TRACK_VIEW = "trackView";
@@ -33,6 +48,11 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public static final String SET_APP_VERSION = "setAppVersion";
     public static final String DEBUG_MODE = "debugMode";
     public static final String ENABLE_UNCAUGHT_EXCEPTION_REPORTING = "enableUncaughtExceptionReporting";
+
+    public static final String TAG_MANAGER_INIT = "initTagManager";
+    public static final String TAG_MANAGER_PUSH = "pushTagManager";
+    public static final String TAG_MANAGER_PUSH_EVENT = "pushEventTagManager";
+    public static final String TAG_MANAGER_PUSH_SCREEN = "pushScreenTagManager";
 
     public Boolean trackerStarted = false;
     public Boolean debugModeEnabled = false;
@@ -127,6 +147,21 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         } else if (ENABLE_UNCAUGHT_EXCEPTION_REPORTING.equals(action)) {
             Boolean enable = args.getBoolean(0);
             this.enableUncaughtExceptionReporting(enable, callbackContext);
+        } else if (TAG_MANAGER_INIT.equals(action)) {
+            String containerId = args.getString(0);
+            this.initTagManager(containerId, callbackContext);
+        } else if (TAG_MANAGER_PUSH_SCREEN.equals(action)) {
+            String screenName = args.getString(0);
+            this.initTagManager(screenName, callbackContext);
+        } else if (TAG_MANAGER_PUSH_EVENT.equals(action)) {
+            String eventCategory = args.getString(0);
+            String eventAction = args.getString(1);
+            String eventLabel = args.getString(2);
+            this.initTagManager(eventCategory, eventAction, eventLabel, callbackContext);
+        } else if (TAG_MANAGER_PUSH.equals(action)) {
+            String key = args.getString(0);
+            String value = args.getString(1);
+            this.initTagManager(key, value, callbackContext);
         }
         return false;
     }
@@ -392,4 +427,87 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         tracker.enableExceptionReporting(enable);
         callbackContext.success((enable ? "Enabled" : "Disabled") + " uncaught exception reporting");
     }
+
+    private void initTagManager(String containerId, CallbackContext callbackContext) {
+        // Según https://developers.google.com/tag-manager/android/v4/
+        TagManager tagManager = TagManager.getInstance(this);        
+        // Modify the log level of the logger to print out not only
+        // warning and error messages, but also verbose, debug, info messages.
+        tagManager.setVerboseLoggingEnabled(true);
+        System.out.println("[TAG_MANAGER] tagManager: " + tagManager);
+
+        /*
+        Use the TagManager singleton to make a request to load a container, specifying a 
+        Google Tag Manager container ID as well as your default container file. 
+        The container ID should be uppercase and exactly match the container ID in 
+        the Google Tag Manager web interface. The call to 
+        loadContainerPreferNonDefault() is non-blocking and returns a PendingResult:
+        */
+        // Usado para pruebas
+        // String CONTAINER_ID = "GTM-T4LQXP";
+        // PendingResult<ContainerHolder> pending = tagManager.loadContainerPreferNonDefault(
+        //   CONTAINER_ID,
+        //   R.raw.gtm_t4lqxp);
+
+        // Este es el de fiber
+        // String CONTAINER_ID = "GTM-5VHBS6";
+        PendingResult<ContainerHolder> pending = tagManager.loadContainerPreferNonDefault(
+          containerId,
+          R.raw.default_bin_container);
+
+        //Use a ResultCallback to return the ContainerHolder once it has finished loading or timed out:
+
+        long TIMEOUT_FOR_CONTAINER_OPEN_MILLISECONDS = 2000;
+        final MainActivity thisContext = this;
+
+        // The onResult method will be called as soon as one of the following happens:
+        //     1. a saved container is loaded
+        //     2. if there is no saved container, a network container is loaded
+        //     3. the 2-second timeout occurs
+        pending.setResultCallback(new ResultCallback<ContainerHolder>() {
+            @Override
+            public void onResult(ContainerHolder containerHolder) {
+                GTM_ContainerHolderSingleton.setContainerHolder(containerHolder);
+                Container container = containerHolder.getContainer();
+                if (!containerHolder.getStatus().isSuccess()) {
+                    Log.e("[TAG_MANAGER]", "failure loading container");
+                    System.err.println("[TAG_MANAGER] ERROR!!!!");
+                    callbackContext.error("[TAG_MANAGER] ERROR!!!!");
+                    return;
+                }
+                System.out.println("[TAG_MANAGER] Ready to start");
+                callbackContext.success("[TAG_MANAGER] Ready to start");        
+            }
+        }, TIMEOUT_FOR_CONTAINER_OPEN_MILLISECONDS, TimeUnit.MILLISECONDS);
+    }
+
+    private DataLayer getDataLayer() {
+        Context context = this.cordova.getActivity();
+        DataLayer dataLayer = TagManager.getInstance(context).getDataLayer();
+        return dataLayer;
+    }
+    /**
+     * Push an "ScreenView" event with the given screen name.
+     */
+    public void pushScreen(String screenName, CallbackContext callbackContext) {
+		DataLayer dataLayer = getDataLayer();
+        dataLayer.pushEvent("ScreenView", DataLayer.mapOf("ScreenName", screenName));
+    }
+
+	/**
+     * Push a custom event with Category, Action and label.
+     */
+    public void pushEvent(String eventCategory, String eventAction, String eventLabel, CallbackContext callbackContext) {
+		DataLayer dataLayer = getDataLayer();
+        dataLayer.pushEvent("CustomEvent", DataLayer.mapOf("eventCategory", eventCategory,"eventAction", eventAction,"eventLabel", eventLabel));
+    }
+
+	/**
+     * Push data to the Datalayer
+     */
+    public void push(String key, String value, CallbackContext callbackContext) {
+		DataLayer dataLayer = getDataLayer();
+        dataLayer.push(DataLayer.mapOf(key, value));
+    }
+    
 }

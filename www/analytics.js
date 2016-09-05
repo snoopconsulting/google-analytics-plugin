@@ -88,4 +88,23 @@ UniversalAnalyticsPlugin.prototype.enableUncaughtExceptionReporting = function (
   cordova.exec(success, error, 'UniversalAnalytics', 'enableUncaughtExceptionReporting', [enable]);
 };
 
+UniversalAnalyticsPlugin.prototype.initTagManager = function(containerId, success, error) {
+  cordova.exec(success, error, 'UniversalAnalytics', 'initTagManager', [containerId]);
+};
+
+UniversalAnalyticsPlugin.prototype.pushTagManager = function(screenName, success, error) {
+  cordova.exec(success, error, 'UniversalAnalytics', 'pushTagManager', [screenName]);
+};
+
+UniversalAnalyticsPlugin.prototype.pushEventTagManager = function(eventCategory, eventAction, eventLabel, success, error) {
+  cordova.exec(success, error, 'UniversalAnalytics', 'pushEventTagManager', [eventCategory, eventAction, eventLabel]);
+};
+
+UniversalAnalyticsPlugin.prototype.pushScreenTagManager = function(key, value, success, error) {
+  cordova.exec(success, error, 'UniversalAnalytics', 'pushScreenTagManager', [key, value]);
+};
+
+
+
+
 module.exports = new UniversalAnalyticsPlugin();
