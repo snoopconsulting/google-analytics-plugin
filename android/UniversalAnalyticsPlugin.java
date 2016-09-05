@@ -60,6 +60,9 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
 
     public Tracker tracker;
 
+    // La app tiene que setearlo **antes** de usar el plugin
+    public static int R_raw_default_bin_container = -1;
+
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if (START_TRACKER.equals(action)) {
@@ -150,18 +153,23 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         } else if (TAG_MANAGER_INIT.equals(action)) {
             String containerId = args.getString(0);
             this.initTagManager(containerId, callbackContext);
+            return true;
         } else if (TAG_MANAGER_PUSH_SCREEN.equals(action)) {
+            System.out.println("[TAG_MANAGER] TAG_MANAGER_PUSH_SCREEN : " + args);
             String screenName = args.getString(0);
-            this.initTagManager(screenName, callbackContext);
+            this.pushScreen(screenName, callbackContext);
+            return true;
         } else if (TAG_MANAGER_PUSH_EVENT.equals(action)) {
             String eventCategory = args.getString(0);
             String eventAction = args.getString(1);
             String eventLabel = args.getString(2);
-            this.initTagManager(eventCategory, eventAction, eventLabel, callbackContext);
+            this.pushEvent(eventCategory, eventAction, eventLabel, callbackContext);
+            return true;
         } else if (TAG_MANAGER_PUSH.equals(action)) {
             String key = args.getString(0);
             String value = args.getString(1);
-            this.initTagManager(key, value, callbackContext);
+            this.push(key, value, callbackContext);
+            return true;
         }
         return false;
     }
@@ -428,9 +436,9 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         callbackContext.success((enable ? "Enabled" : "Disabled") + " uncaught exception reporting");
     }
 
-    private void initTagManager(String containerId, CallbackContext callbackContext) {
+    private void initTagManager(String containerId, final CallbackContext callbackContext) {
         // Según https://developers.google.com/tag-manager/android/v4/
-        TagManager tagManager = TagManager.getInstance(this);        
+        TagManager tagManager = TagManager.getInstance(this.cordova.getActivity());        
         // Modify the log level of the logger to print out not only
         // warning and error messages, but also verbose, debug, info messages.
         tagManager.setVerboseLoggingEnabled(true);
@@ -453,12 +461,11 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         // String CONTAINER_ID = "GTM-5VHBS6";
         PendingResult<ContainerHolder> pending = tagManager.loadContainerPreferNonDefault(
           containerId,
-          R.raw.default_bin_container);
+          R_raw_default_bin_container);
 
         //Use a ResultCallback to return the ContainerHolder once it has finished loading or timed out:
 
         long TIMEOUT_FOR_CONTAINER_OPEN_MILLISECONDS = 2000;
-        final MainActivity thisContext = this;
 
         // The onResult method will be called as soon as one of the following happens:
         //     1. a saved container is loaded
@@ -467,7 +474,7 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         pending.setResultCallback(new ResultCallback<ContainerHolder>() {
             @Override
             public void onResult(ContainerHolder containerHolder) {
-                GTM_ContainerHolderSingleton.setContainerHolder(containerHolder);
+                // GTM_ContainerHolderSingleton.setContainerHolder(containerHolder);
                 Container container = containerHolder.getContainer();
                 if (!containerHolder.getStatus().isSuccess()) {
                     Log.e("[TAG_MANAGER]", "failure loading container");
@@ -479,6 +486,8 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
                 callbackContext.success("[TAG_MANAGER] Ready to start");        
             }
         }, TIMEOUT_FOR_CONTAINER_OPEN_MILLISECONDS, TimeUnit.MILLISECONDS);
+        callbackContext.success("initTagManager");
+
     }
 
     private DataLayer getDataLayer() {
@@ -492,6 +501,8 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public void pushScreen(String screenName, CallbackContext callbackContext) {
 		DataLayer dataLayer = getDataLayer();
         dataLayer.pushEvent("ScreenView", DataLayer.mapOf("ScreenName", screenName));
+        System.out.println("[TAG_MANAGER] pushScreen: " + screenName);
+        callbackContext.success("pushScreen: " + screenName);
     }
 
 	/**
@@ -500,6 +511,8 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public void pushEvent(String eventCategory, String eventAction, String eventLabel, CallbackContext callbackContext) {
 		DataLayer dataLayer = getDataLayer();
         dataLayer.pushEvent("CustomEvent", DataLayer.mapOf("eventCategory", eventCategory,"eventAction", eventAction,"eventLabel", eventLabel));
+        System.out.println("[TAG_MANAGER] pushEvent: " + eventAction);
+        callbackContext.success("pushEvent: " + eventAction);
     }
 
 	/**
@@ -508,6 +521,8 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public void push(String key, String value, CallbackContext callbackContext) {
 		DataLayer dataLayer = getDataLayer();
         dataLayer.push(DataLayer.mapOf(key, value));
+        System.out.println("[TAG_MANAGER] push: " + key);
+        callbackContext.success("push: " + key);
     }
     
 }
