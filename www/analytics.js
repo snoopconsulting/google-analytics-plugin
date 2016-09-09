@@ -1,4 +1,6 @@
-function UniversalAnalyticsPlugin() {}
+function UniversalAnalyticsPlugin() {
+  this.lastTagManagerScreen = undefined;
+}
 
 UniversalAnalyticsPlugin.prototype.startTrackerWithId = function(id, success, error) {
   cordova.exec(success, error, 'UniversalAnalytics', 'startTrackerWithId', [id]);
@@ -87,5 +89,28 @@ UniversalAnalyticsPlugin.prototype.addTransactionItem = function(transactionId, 
 UniversalAnalyticsPlugin.prototype.enableUncaughtExceptionReporting = function (enable, success, error) {
   cordova.exec(success, error, 'UniversalAnalytics', 'enableUncaughtExceptionReporting', [enable]);
 };
+
+UniversalAnalyticsPlugin.prototype.initTagManager = function(containerId, success, error) {
+  cordova.exec(success, error, 'UniversalAnalytics', 'initTagManager', [containerId]);
+};
+
+UniversalAnalyticsPlugin.prototype.pushScreenTagManager = function(screenName, success, error) {
+  // Patch porque HomeScreen se activa repetidamente cuando clickeo en el mapa
+  if ( screenName !== this.lastTagManagerScreen) {
+    this.lastTagManagerScreen = screenName;
+    cordova.exec(success, error, 'UniversalAnalytics', 'pushScreenTagManager', [screenName]);
+  }
+};
+
+UniversalAnalyticsPlugin.prototype.pushEventTagManager = function(eventCategory, eventAction, eventLabel, success, error) {
+  cordova.exec(success, error, 'UniversalAnalytics', 'pushEventTagManager', [eventCategory, eventAction, eventLabel]);
+};
+
+UniversalAnalyticsPlugin.prototype.pushTagManager = function(key, value, success, error) {
+  cordova.exec(success, error, 'UniversalAnalytics', 'pushTagManager', [key, value]);
+};
+
+
+
 
 module.exports = new UniversalAnalyticsPlugin();
