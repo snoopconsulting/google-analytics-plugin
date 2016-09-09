@@ -60,9 +60,6 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
 
     public Tracker tracker;
 
-    // La app tiene que setearlo **antes** de usar el plugin
-    public static int R_raw_default_bin_container = -1;
-
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if (START_TRACKER.equals(action)) {
@@ -461,7 +458,7 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         // String CONTAINER_ID = "GTM-5VHBS6";
         PendingResult<ContainerHolder> pending = tagManager.loadContainerPreferNonDefault(
           containerId,
-          R_raw_default_bin_container);
+          ar.com.cablevisionfibertel.fibertelzoneapp.R.raw.default_bin_container);
 
         //Use a ResultCallback to return the ContainerHolder once it has finished loading or timed out:
 
