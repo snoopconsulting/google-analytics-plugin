@@ -435,17 +435,17 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
 
     private void initTagManager(String containerId, final CallbackContext callbackContext) {
         // Según https://developers.google.com/tag-manager/android/v4/
-        TagManager tagManager = TagManager.getInstance(this.cordova.getActivity());        
+        TagManager tagManager = TagManager.getInstance(this.cordova.getActivity());
         // Modify the log level of the logger to print out not only
         // warning and error messages, but also verbose, debug, info messages.
         tagManager.setVerboseLoggingEnabled(true);
         System.out.println("[TAG_MANAGER] tagManager: " + tagManager);
 
         /*
-        Use the TagManager singleton to make a request to load a container, specifying a 
-        Google Tag Manager container ID as well as your default container file. 
-        The container ID should be uppercase and exactly match the container ID in 
-        the Google Tag Manager web interface. The call to 
+        Use the TagManager singleton to make a request to load a container, specifying a
+        Google Tag Manager container ID as well as your default container file.
+        The container ID should be uppercase and exactly match the container ID in
+        the Google Tag Manager web interface. The call to
         loadContainerPreferNonDefault() is non-blocking and returns a PendingResult:
         */
         // Usado para pruebas
@@ -458,7 +458,7 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         // String CONTAINER_ID = "GTM-5VHBS6";
         PendingResult<ContainerHolder> pending = tagManager.loadContainerPreferNonDefault(
           containerId,
-          ar.com.cablevisionfibertel.fibertelzoneapp.R.raw.default_bin_container);
+          ar.com.cablevisionfibertel.appclientes.R.raw.default_bin_container);
 
         //Use a ResultCallback to return the ContainerHolder once it has finished loading or timed out:
 
@@ -480,7 +480,7 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
                     return;
                 }
                 System.out.println("[TAG_MANAGER] Ready to start");
-                callbackContext.success("[TAG_MANAGER] Ready to start");        
+                callbackContext.success("[TAG_MANAGER] Ready to start");
             }
         }, TIMEOUT_FOR_CONTAINER_OPEN_MILLISECONDS, TimeUnit.MILLISECONDS);
         callbackContext.success("initTagManager");
@@ -521,5 +521,5 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         System.out.println("[TAG_MANAGER] push: " + key);
         callbackContext.success("push: " + key);
     }
-    
+
 }
