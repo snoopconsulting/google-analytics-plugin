@@ -6,45 +6,10 @@ google-analytics-plugin
 
 Cordova (PhoneGap) 3.0+ Plugin to connect to Google's native Universal Analytics SDK
 
-Al 1/9/2016, hicimos rebase al commit `17ea1a3de44553caaaa69b591fbb85398537bae9` xq pudimos agregar el plugin ( no ocurre el conflicto de abajo )
+Al 1/9/2016, hicimos rebase al commit `17ea1a3de44553caaaa69b591fbb85398537bae9` xq pudimos agregar el plugin ( antes ocurría un conflicto, ver la historia de este README.md para más detalles )
 
-Este fork está hecho porque al 20/10/2015 no podemos integrar una versión en FibertelZone:
-
-* La versión 0.8.0 rompe el gradle porque agrega el com.google.android.gms y salta el error:
-
-```
-* What went wrong:
-Execution failed for task ':processDebugResources'.
-> Error: more than one library with package name 'com.google.android.gms'
-  You can temporarily disable this error with android.enforceUniquePackageName=false
-  However, this is temporary and will be enforced in 1.0
-```
-
-En el README.md menciona como fix temporario usar la v0.7.2, pero esta agrega Google Play Services v19 y ya van por la v23 y la necesitamos para el Google Maps Plugin
-
-Así ANDA pero no me gusta que baje la versión porque sí
-
-En este fork le cambiamos la dependencia al codigo en la v 0.7.2 para que use el Google Play Services v23
-
-cordova dice:
-```
-WARNING: com.google.playservices has been renamed to cordova-plugin-googleplayservices. You may not be getting the latest version! We suggest you `cordova plugin rm com.google.playservices` and `cordova plugin add cordova-plugin-googleplayservices`.
-Fetching plugin "com.google.playservices@19.0.0" via cordova plugins registry
-```
-
-Tengo que hacer el fork a 
-https://github.com/snoopconsulting/google-analytics-plugin/commit/5957d36fef3242487c38f6348ba391ac85394c7d
-
-```
-git branch v_0.7.2_play_v3 5957d36fef3242487c38f6348ba391ac85394c7d
-```
-
-Edito ahí el plugin.xml y tagueo, ahora se agrega así:
-
-```
-cordova plugin add https://github.com/snoopconsulting/google-analytics-plugin#v_0.7.2_v23
-```
-
+README de upstream:
+-------------------
 
 Prerequisites:
 * A Cordova 3.0+ project for iOS, Android and/or Windows Phone 8
