@@ -495,13 +495,9 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
                 tagManagerStarted = true;     
 
                 // Now dequeue pending requests
-                try {
-                    String screenName;
-                    while ((screenName = screensQueue.take()) != null ) {
-                        pushScreen(screenName, null);
-                    }
-                } catch ( InterruptedException iex ) {
-                    // Well, we did our best here. Worst case, we lose some initial tags
+                String screenName;
+                while ((screenName = screensQueue.poll()) != null ) {
+                    pushScreen(screenName, null);
                 }
             }
         }, TIMEOUT_FOR_CONTAINER_OPEN_MILLISECONDS, TimeUnit.MILLISECONDS);
