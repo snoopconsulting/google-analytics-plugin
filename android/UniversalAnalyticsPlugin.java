@@ -16,6 +16,11 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+
 // Para importar las librerias GTM
 import com.google.android.gms.tagmanager.Container;
 import com.google.android.gms.tagmanager.TagManager;
@@ -59,6 +64,11 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public HashMap<Integer, String> customDimensions = new HashMap<Integer, String>();
 
     public Tracker tracker;
+
+    private boolean tagManagerStarted = false;
+
+    private List<String> screensQueue = new ArrayList<String>();
+
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -471,7 +481,7 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
         pending.setResultCallback(new ResultCallback<ContainerHolder>() {
             @Override
             public void onResult(ContainerHolder containerHolder) {
-                // GTM_ContainerHolderSingleton.setContainerHolder(containerHolder);
+                ContainerHolderSingleton.setContainerHolder(containerHolder);
                 Container container = containerHolder.getContainer();
                 if (!containerHolder.getStatus().isSuccess()) {
                     Log.e("[TAG_MANAGER]", "failure loading container");
@@ -479,12 +489,22 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
                     callbackContext.error("[TAG_MANAGER] ERROR!!!!");
                     return;
                 }
+
+                // ContainerLoadedCallback.registerCallbacksForContainer(container);
+                containerHolder.setContainerAvailableListener(new ContainerLoadedCallback());
+
                 System.out.println("[TAG_MANAGER] Ready to start");
-                callbackContext.success("[TAG_MANAGER] Ready to start");        
+
+                for (String screenName : screensQueue) {
+                    pushScreen(screenName, null);
+                }
+                screensQueue.clear();
+                
+                callbackContext.success("[TAG_MANAGER] Ready to start");
+                tagManagerStarted = true;     
             }
         }, TIMEOUT_FOR_CONTAINER_OPEN_MILLISECONDS, TimeUnit.MILLISECONDS);
         callbackContext.success("initTagManager");
-
     }
 
     private DataLayer getDataLayer() {
@@ -496,16 +516,28 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
      * Push an "ScreenView" event with the given screen name.
      */
     public void pushScreen(String screenName, CallbackContext callbackContext) {
+        if ( !tagManagerStarted ) {
+            Log.w("[TAG_MANAGER]", "pushScreen - tagManagerStarted: " + tagManagerStarted);
+            screensQueue.add(screenName);
+            if ( callbackContext != null ) {
+                callbackContext.success("pushScreen queued: " + screenName);
+            }
+            return;         
+        }
 		DataLayer dataLayer = getDataLayer();
         dataLayer.pushEvent("ScreenView", DataLayer.mapOf("ScreenName", screenName));
+        Log.i("[TAG_MANAGER]", "pushScreen - dataLayer: " + dataLayer.toString()); 
         System.out.println("[TAG_MANAGER] pushScreen: " + screenName);
-        callbackContext.success("pushScreen: " + screenName);
+        if ( callbackContext != null ) {
+            callbackContext.success("pushScreen: " + screenName);
+        }
     }
 
 	/**
      * Push a custom event with Category, Action and label.
      */
     public void pushEvent(String eventCategory, String eventAction, String eventLabel, CallbackContext callbackContext) {
+        Log.i("[TAG_MANAGER]", "pushEvent - tagManagerStarted: " + tagManagerStarted); 
 		DataLayer dataLayer = getDataLayer();
         dataLayer.pushEvent("CustomEvent", DataLayer.mapOf("eventCategory", eventCategory,"eventAction", eventAction,"eventLabel", eventLabel));
         System.out.println("[TAG_MANAGER] pushEvent: " + eventAction);
@@ -516,10 +548,77 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
      * Push data to the Datalayer
      */
     public void push(String key, String value, CallbackContext callbackContext) {
+        Log.i("[TAG_MANAGER]", "push - tagManagerStarted: " + tagManagerStarted); 
 		DataLayer dataLayer = getDataLayer();
         dataLayer.push(DataLayer.mapOf(key, value));
         System.out.println("[TAG_MANAGER] push: " + key);
         callbackContext.success("push: " + key);
     }
     
+
+
+    private static class ContainerLoadedCallback implements ContainerHolder.ContainerAvailableListener {
+        @Override
+        public void onContainerAvailable(ContainerHolder containerHolder, String containerVersion) {
+            // We load each container when it becomes available.
+            Container container = containerHolder.getContainer();
+            registerCallbacksForContainer(container);
+        }
+
+        public static void registerCallbacksForContainer(Container container) {
+            // Register two custom function call macros to the container.
+            // container.registerFunctionCallMacroCallback("increment", new CustomMacroCallback());
+            // container.registerFunctionCallMacroCallback("mod", new CustomMacroCallback());
+            // Register a custom function call tag to the container.
+            // container.registerFunctionCallTagCallback("custom_tag", new CustomTagCallback());
+        }
+    }
+
+    // private static class CustomMacroCallback implements FunctionCallMacroCallback {
+    //     private int numCalls;
+
+    //     @Override
+    //     public Object getValue(String name, Map<String, Object> parameters) {
+    //         if ("increment".equals(name)) {
+    //             return ++numCalls;
+    //         } else if ("mod".equals(name)) {
+    //             return (Long) parameters.get("key1") % Integer.valueOf((String) parameters.get("key2"));
+    //         } else {
+    //             throw new IllegalArgumentException("Custom macro name: " + name + " is not supported.");
+    //         }
+    //     }
+    // }
+
+    // private static class CustomTagCallback implements FunctionCallTagCallback {
+    //     @Override
+    //     public void execute(String tagName, Map<String, Object> parameters) {
+    //         // The code for firing this custom tag.
+    //         Log.i("FZones", "Custom function call tag :" + tagName + " is fired.");
+    //     }
+    // }
+
+
 }
+
+/**
+ * Singleton to hold the GTM Container (since it should be only created once
+ * per run of the app).
+ */
+class ContainerHolderSingleton {
+    private static ContainerHolder containerHolder;
+
+    /**
+     * Utility class; don't instantiate.
+     */
+    private ContainerHolderSingleton() {
+    }
+
+    public static ContainerHolder getContainerHolder() {
+        return containerHolder;
+    }
+
+    public static void setContainerHolder(ContainerHolder c) {
+        containerHolder = c;
+    }
+}
+
