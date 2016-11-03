@@ -16,10 +16,8 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 // Para importar las librerias GTM
 import com.google.android.gms.tagmanager.Container;
@@ -67,7 +65,7 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
 
     private boolean tagManagerStarted = false;
 
-    private List<String> screensQueue = new ArrayList<String>();
+    private BlockingQueue<String> screensQueue = new ArrayBlockingQueue<String>(100);
 
 
     @Override
@@ -494,14 +492,17 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
                 containerHolder.setContainerAvailableListener(new ContainerLoadedCallback());
 
                 System.out.println("[TAG_MANAGER] Ready to start");
-
-                for (String screenName : screensQueue) {
-                    pushScreen(screenName, null);
-                }
-                screensQueue.clear();
-                
-                callbackContext.success("[TAG_MANAGER] Ready to start");
                 tagManagerStarted = true;     
+
+                // Now dequeue pending requests
+                try {
+                    String screenName;
+                    while ((screenName = screensQueue.take()) != null ) {
+                        pushScreen(screenName, null);
+                    }
+                } catch ( InterruptedException iex ) {
+                    // Well, we did our best here. Worst case, we lose some initial tags
+                }
             }
         }, TIMEOUT_FOR_CONTAINER_OPEN_MILLISECONDS, TimeUnit.MILLISECONDS);
         callbackContext.success("initTagManager");
@@ -518,11 +519,15 @@ public class UniversalAnalyticsPlugin extends CordovaPlugin {
     public void pushScreen(String screenName, CallbackContext callbackContext) {
         if ( !tagManagerStarted ) {
             Log.w("[TAG_MANAGER]", "pushScreen - tagManagerStarted: " + tagManagerStarted);
-            screensQueue.add(screenName);
-            if ( callbackContext != null ) {
-                callbackContext.success("pushScreen queued: " + screenName);
+            try {
+                screensQueue.put(screenName);
+                if ( callbackContext != null ) {
+                    callbackContext.success("pushScreen queued: " + screenName);
+                }
+                return;         
+            } catch ( InterruptedException iex ) {
+                // Well, we did our best here. Worst case, we lose some initial tag
             }
-            return;         
         }
 		DataLayer dataLayer = getDataLayer();
         dataLayer.pushEvent("ScreenView", DataLayer.mapOf("ScreenName", screenName));
